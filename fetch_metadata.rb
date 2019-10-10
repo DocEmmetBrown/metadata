@@ -41,6 +41,10 @@ def result(previous, url)
     end
     while r.code == "301"
       r = fetch_url(URI(r["location"]))
+      if r.nil?
+        $get_urls.delete(url)
+        return
+      end
     end
     if r.code != "200"
       # if there is an error, it's also probably that
@@ -52,6 +56,10 @@ def result(previous, url)
       # trying to add a fake new part for the url
       fake_url = url.dup << "xxxx"
       r2 = fetch_url(URI(to_url(fake_url)))
+      if r2.nil?
+        $get_urls.delete(url)
+        return
+      end
       # if the result is the same, we're at the end of
       # the fetching
       if r.body == r2.body
