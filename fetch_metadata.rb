@@ -34,7 +34,19 @@ def result(previous, url)
     $result_data[to_url(previous)] = url.last if previous
     $get_urls.delete(url)
   end
+  
+
   if uri
+    if url.last == "user-data"
+      r = fetch_url(uri)
+      $get_urls.delete(url)
+      if r.nil?
+        p "r is nil #{url}" if ENV["DEBUG"]
+      else
+        $result_data[to_url(url)] = r.body
+      end
+      return
+    end
     r = fetch_url(uri)
     if r.nil?
       p "r is nil #{url}" if ENV["DEBUG"]
@@ -61,7 +73,6 @@ def result(previous, url)
       r2 = fetch_url(URI(to_url(fake_url)))
       if r2.nil?
         p "r2 is nil #{url}" if ENV["DEBUG"]
-        $get_urls.delete(url)
         return
       end
       # if the result is the same, we're at the end of
@@ -69,12 +80,19 @@ def result(previous, url)
       if r.body == r2.body
         $result_data[to_url(url)] = r.body
       else
-        # otherwise, add all the findings for
-        # the new loop
-        r.body.split("\n").each do |s|
-          s.chop! if s[-1] == "/"
-          new_url = url.dup << s
-          $get_urls[new_url] = url
+        # if it's a json block
+        # append it as a whole
+        if r.body[0] == "{"
+          p "json block #{r.body}" if ENV["DEBUG"]
+          $result_data[to_url(url)] = r.body
+        else
+          # otherwise, add all the findings for
+          # the new loop
+          r.body.split("\n").each do |s|
+            s.chop! if s[-1] == "/"
+            new_url = url.dup << s
+            $get_urls[new_url] = url
+          end
         end
       end
     end
